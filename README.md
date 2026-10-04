@@ -17,6 +17,7 @@ Create `.env.local` in this folder. Use `.env.local.example` as the template; th
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role or secret key. Server only, never commit it. |
 | `CRON_SECRET` | Any long random string |
 | `NEXT_PUBLIC_TZ` | Optional. Hospital time zone, default `Africa/Nairobi`. |
+| `ANDROID_CERT_SHA256` | Optional. Android signing key fingerprint, see [Mobile apps](#mobile-apps). |
 
 ### 2. Database
 
@@ -41,6 +42,26 @@ In the Supabase **SQL Editor**, run these files in order. Run each one once, as 
 npm install
 npm run dev          # http://localhost:3000
 ```
+
+## Mobile apps
+
+The website is the app. The phone versions open the same live site full screen, so there is nothing extra to update when the site changes.
+
+| Platform | How people get it |
+|---|---|
+| Web | Open the site in any browser. |
+| Android | Download `daima-health.apk` from the download page or the banner in the app. Built by `.github/workflows/android.yml` from `android/` and attached to the newest GitHub release. |
+| iPhone / iPad | The app shows an "Add to Home Screen" guide when opened in Safari. |
+
+The download page lives in `site/` and is published to https://immanuellangat.github.io/daima-hms/ by `.github/workflows/pages.yml`.
+
+**One-time setup on GitHub**
+
+1. Settings → Secrets and variables → Actions → **Variables** → add `APP_URL` = the live site, e.g. `https://daima-hms.vercel.app/`.
+2. Settings → Pages → Source: **GitHub Actions**.
+3. Actions → run **Android APK** and **Download page** once (Run workflow).
+
+**Optional: permanent Android signing key.** Without one, each APK is signed with a throwaway key, so people must uninstall the old app before installing a new version, and the app shows a thin address bar. To fix both, add the secrets `ANDROID_KEYSTORE_BASE64` (a base64 PKCS#12 keystore), `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS`. Then copy the SHA-256 fingerprint from the build summary into the website's `ANDROID_CERT_SHA256` environment variable, which `/.well-known/assetlinks.json` serves.
 
 ## How a visit flows
 

@@ -1,0 +1,62 @@
+// Trusted Web Activity: a thin Android shell that opens the live website full screen in Chrome.
+// Built by .github/workflows/android.yml with -PappUrl=<live site> -PversionCode=<run number>.
+plugins {
+    id "com.android.application"
+}
+
+def appUrl = (findProperty("appUrl") ?: "https://example.com/").toString()
+def appHost = new URI(appUrl).host
+def buildNumber = (findProperty("versionCode") ?: "1").toString().toInteger()
+def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+
+android {
+    namespace "io.github.immanuellangat.daima"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "io.github.immanuellangat.daima"
+        minSdk 21
+        targetSdk 35
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+
+        manifestPlaceholders = [hostName: appHost, defaultUrl: appUrl, launcherName: "DAIMA Health"]
+        // Matches /.well-known/assetlinks.json on the site; together they remove the address bar.
+        resValue "string", "assetStatements",
+            "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], " +
+            "\\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${appHost}\\\"}}]"
+    }
+
+    buildFeatures {
+        resValues true
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storeType "pkcs12"
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: "daima"
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Without a release key, fall back to the runner's throwaway debug key so the APK still installs.
+            signingConfig keystorePath ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0"
+}

@@ -1,0 +1,46 @@
+# Publishes the download page in site/ to https://<user>.github.io/<repo>/.
+# Needs the repository variable APP_URL (the live https:// website address), and
+# Settings > Pages > Source set to "GitHub Actions".
+name: Download page
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      APP_URL: ${{ vars.APP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fill in links
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "::error::Set the APP_URL repository variable (Settings > Secrets and variables > Actions > Variables) to the live https:// address of the website."
+            exit 1
+          fi
+          APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/daima-health.apk"
+          sed -i "s|__APP_URL__|${APP_URL}|g; s|__APK_URL__|${APK_URL}|g" site/index.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
