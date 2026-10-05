@@ -27,6 +27,7 @@ In the Supabase **SQL Editor**, run these files in order. Run each one once, as 
 2. `supabase/migrations/002_seed.sql`: symptoms and conditions, lab tests, imaging procedures, starter medicine stock
 3. `supabase/migrations/003_analytics.sql`: analytics and stock-alert functions
 4. `supabase/migrations/004_booking_requests.sql`: online appointment requests from the public booking page
+5. `supabase/migrations/005_phone_matching.sql`: patients can link their account however they type their phone number
 
 ### 3. First administrator
 
