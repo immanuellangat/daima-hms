@@ -7,7 +7,7 @@ import { noShowRisk } from "@/lib/insights";
 import { daySlots } from "@/lib/slots";
 import { createClient } from "@/lib/supabase/server";
 import { daysFromNow, fmtTime, one, todayStr, zonedToUtc } from "@/lib/utils";
-import { Badge, Button, Card, CardHeader, Empty, Field, Flash, Input, PageHeader, Select, StatusBadge } from "@/components/ui";
+import { Badge, Button, ButtonLink, Card, CardHeader, Empty, Field, Flash, Input, PageHeader, Select, StatusBadge } from "@/components/ui";
 
 export const metadata = { title: "Appointments" };
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -59,12 +59,25 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/app
     .from("doctor_schedules").select("id, doctor_id, weekday, start_time, end_time, slot_minutes")
     .in("doctor_id", doctorId ? [doctorId] : docs.map((d) => d.id)).order("weekday");
 
+  const canHandleRequests = ["receptionist", "hospital_admin", "system_admin"].includes(session.role);
+  const { count: requestCount } = canHandleRequests
+    ? await supabase.from("booking_requests").select("id", { count: "exact", head: true }).eq("status", "pending")
+    : { count: 0 };
+
   const back = `/appointments?date=${date}&doctor=${doctorId}`;
   const reschedAction = rescheduleId ? rescheduleAppointment.bind(null, rescheduleId) : bookAppointment;
 
   return (
     <>
-      <PageHeader title="Appointments" subtitle="Clinic calendar, doctor schedules, bookings and reminders." />
+      <PageHeader
+        title="Appointments"
+        subtitle="Clinic calendar, doctor schedules, bookings and reminders."
+        action={canHandleRequests && (
+          <ButtonLink href="/appointments/requests" variant={requestCount ? "primary" : "secondary"}>
+            Booking requests{requestCount ? ` (${requestCount})` : ""}
+          </ButtonLink>
+        )}
+      />
       <Flash ok={sp.ok as string} error={sp.error as string} />
 
       <Card className="mb-6 p-4">

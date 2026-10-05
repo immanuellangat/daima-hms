@@ -68,6 +68,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/reception", label: "Front Desk", icon: "layout" },
     { href: "/reception/register", label: "Register Patient", icon: "userplus" },
     { href: "/appointments", label: "Appointments", icon: "calendar" },
+    { href: "/appointments/requests", label: "Booking Requests", icon: "clipboard" },
     { href: "/billing", label: "Payments", icon: "receipt" },
   ],
   nurse: [

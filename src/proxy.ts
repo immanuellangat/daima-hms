@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 
 // Refreshes the Supabase session cookie and does an optimistic "is signed in?" check.
 // Role-based authorization happens in each section layout (requireRole) and in RLS.
-const PUBLIC = ["/", "/login", "/api/cron", "/manifest.webmanifest", "/.well-known"];
+const PUBLIC = ["/", "/login", "/book", "/api/cron", "/manifest.webmanifest", "/.well-known"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

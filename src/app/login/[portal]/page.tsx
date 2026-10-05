@@ -41,6 +41,7 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/lo
 
           <form action={action} className="mt-8 space-y-4">
             <Flash ok={sp.ok as string} error={sp.error as string} />
+            {typeof sp.next === "string" && <input type="hidden" name="next" value={sp.next} />}
             <Field label="Email">
               <Input name="email" type="email" autoComplete="username" required autoFocus />
             </Field>

@@ -26,6 +26,7 @@ In the Supabase **SQL Editor**, run these files in order. Run each one once, as 
 1. `supabase/migrations/001_schema.sql`: tables, security policies, business logic, storage buckets
 2. `supabase/migrations/002_seed.sql`: symptoms and conditions, lab tests, imaging procedures, starter medicine stock
 3. `supabase/migrations/003_analytics.sql`: analytics and stock-alert functions
+4. `supabase/migrations/004_booking_requests.sql`: online appointment requests from the public booking page
 
 ### 3. First administrator
 
@@ -76,6 +77,17 @@ Reception ─► Triage ─► Consultation ─┬─► Laboratory ─┐
 - Prices for consultations, tests, scans and drugs are taken from the catalogue in the database, so clients cannot change them.
 - Dispensing deducts stock first-expiry-first-out and logs every movement.
 - One invoice per visit combines all charges. Supported payment methods: cash, mobile money, bank transfer, insurance, debit card and credit card.
+
+## Online booking
+
+The **Book an appointment** button on the home page opens `/book`:
+
+- **Patients with a portal account** sign in and book directly into a doctor’s free slots.
+- **New patients, or anyone without an account,** send a request with their name, phone, preferred doctor and time. They get a reference number such as `REQ-00012`.
+
+Reception sees waiting requests under **Appointments → Booking requests**. Confirming one books a normal appointment, and registers the patient (name, phone, age, gender) if they are new. Declining records an optional reason. A request only holds a preferred time, so it never blocks a slot.
+
+Requests can only be created through the `request_appointment` database function, which validates the input and limits each phone number to 3 waiting requests. Signed-out visitors cannot read any requests.
 
 ## Roles and portals
 

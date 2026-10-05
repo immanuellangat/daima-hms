@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarPlus } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { HOME_PATH, PORTALS } from "@/lib/roles";
 import { Logo } from "@/components/Logo";
@@ -34,9 +34,14 @@ export default async function Home() {
             Registration, triage, consultation, laboratory, imaging, pharmacy, billing and reporting. Every
             department works from the same file, and sees only what its role allows.
           </p>
-          <a href="#portals" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100">
-            Choose your portal <ArrowRight className="h-4 w-4" aria-hidden />
-          </a>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/book" className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark">
+              <CalendarPlus className="h-4 w-4" aria-hidden /> Book an appointment
+            </Link>
+            <a href="#portals" className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100">
+              Choose your portal <ArrowRight className="h-4 w-4" aria-hidden />
+            </a>
+          </div>
         </div>
       </header>
 

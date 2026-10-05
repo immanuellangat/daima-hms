@@ -7,7 +7,8 @@ import { flashUrl } from "@/lib/utils";
 
 export async function signIn(slug: string, formData: FormData) {
   const portal = portalBySlug(slug);
-  const back = `/login/${slug}`;
+  const next = String(formData.get("next") ?? "");
+  const back = `/login/${slug}${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   if (!portal) redirect("/");
 
   const email = String(formData.get("email") ?? "").trim();
@@ -31,7 +32,9 @@ export async function signIn(slug: string, formData: FormData) {
   }
 
   await supabase.rpc("log_event", { p_action: "LOGIN" });
-  redirect(HOME_PATH[portal.role]);
+  // e.g. /book sends patients back to their booking page; only paths inside this role's own area are honoured.
+  const home = HOME_PATH[portal.role];
+  redirect(next.startsWith(home + "/") && !next.includes("//") ? next : home);
 }
 
 export async function signOut() {
