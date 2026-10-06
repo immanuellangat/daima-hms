@@ -1,9 +1,10 @@
-import { addMedicine, receiveStock, writeOffExpired } from "@/app/actions/pharmacy";
+import { addMedicine, adjustStock, receiveStock, writeOffExpired } from "@/app/actions/pharmacy";
 import { getSettings } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { ADJUST_REASONS } from "@/lib/stock";
 import { daysFromNow, fmtDate, fmtDateTime, money, one } from "@/lib/utils";
 import { StockBar, StockChip, type StockLevel } from "@/components/StockBar";
-import { Badge, Button, Card, CardHeader, Empty, Field, Flash, Input, PageHeader, Select, Table, Td, Th } from "@/components/ui";
+import { Badge, Button, ButtonLink, Card, CardHeader, Empty, Field, Flash, Input, PageHeader, Select, Table, Td, Th } from "@/components/ui";
 
 export const metadata = { title: "Inventory" };
 
@@ -23,6 +24,8 @@ export default async function InventoryPage({ searchParams }: PageProps<"/pharma
 
   const list = (stock ?? []).filter((s) => !q || s.name.toLowerCase().includes(q) || (s.category ?? "").toLowerCase().includes(q));
   const today = daysFromNow(0); const soon = daysFromNow(60);
+  const adjustId = String(sp.adjust ?? "");
+  const adjusting = (batches ?? []).find((b) => b.id === adjustId);
 
   return (
     <>
@@ -94,8 +97,31 @@ export default async function InventoryPage({ searchParams }: PageProps<"/pharma
         </Card>
       </div>
 
+      {adjusting && (
+        <Card id="adjust" className="mb-6 scroll-mt-4 border-brand">
+          <CardHeader
+            title={`Adjust stock · ${one<{ name: string }>(adjusting.medicine)?.name} · batch ${adjusting.batch_no}`}
+            subtitle={`Currently ${adjusting.quantity} in this batch. Enter the correct quantity; the difference is recorded with your reason.`}
+          />
+          <form action={adjustStock.bind(null, adjusting.id)} className="grid gap-3 p-5 sm:grid-cols-4">
+            <Field label="Correct quantity"><Input name="quantity" type="number" min={0} step={1} defaultValue={adjusting.quantity} required autoFocus /></Field>
+            <Field label="Reason">
+              <Select name="reason" required defaultValue="">
+                <option value="" disabled>Choose…</option>
+                {ADJUST_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </Select>
+            </Field>
+            <Field label="Note" hint="Required for Other" className="sm:col-span-2"><Input name="note" maxLength={200} placeholder="e.g. typed 1000 instead of 100" /></Field>
+            <div className="flex gap-2 sm:col-span-4">
+              <Button type="submit">Save adjustment</Button>
+              <ButtonLink href="/pharmacy/inventory" variant="secondary">Cancel</ButtonLink>
+            </div>
+          </form>
+        </Card>
+      )}
+
       <Card className="mb-6">
-        <CardHeader title="Batches" subtitle="Soonest expiry first." />
+        <CardHeader title="Batches" subtitle="Soonest expiry first. Use Adjust to correct a quantity." />
         <Table>
           <thead><tr><Th>Medicine</Th><Th>Batch</Th><Th>Supplier</Th><Th>Qty</Th><Th>Expiry</Th><Th>Purchase price</Th><Th><span className="sr-only">Action</span></Th></tr></thead>
           <tbody>
@@ -110,9 +136,14 @@ export default async function InventoryPage({ searchParams }: PageProps<"/pharma
                   <Td className="tabular-nums">{b.quantity}</Td>
                   <Td>{fmtDate(b.expiry_date)} {expired ? <Badge tone="red">Expired</Badge> : near ? <Badge tone="amber">Expires soon</Badge> : null}</Td>
                   <Td>{money(b.purchase_price, cur)}</Td>
-                  <Td>{expired && b.quantity > 0 && (
-                    <form action={writeOffExpired.bind(null, b.id)}><Button variant="danger" type="submit" className="px-2.5 py-1 text-xs">Write off</Button></form>
-                  )}</Td>
+                  <Td>
+                    <div className="flex items-center justify-end gap-1">
+                      <a href={`/pharmacy/inventory?adjust=${b.id}#adjust`} className="rounded-lg px-2.5 py-1 text-xs font-medium text-brand hover:bg-brand-soft">Adjust</a>
+                      {expired && b.quantity > 0 && (
+                        <form action={writeOffExpired.bind(null, b.id)}><Button variant="danger" type="submit" className="px-2.5 py-1 text-xs">Write off</Button></form>
+                      )}
+                    </div>
+                  </Td>
                 </tr>
               );
             })}
@@ -126,7 +157,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/pharma
           <ul className="divide-y divide-border text-sm">
             {moves.map((m) => (
               <li key={m.id} className="flex flex-wrap justify-between gap-2 px-5 py-2.5">
-                <span><Badge tone={m.movement === "in" ? "green" : m.movement === "out" ? "blue" : "red"}>{m.movement}</Badge> {m.quantity} × {one<{ name: string }>(m.medicine)?.name}</span>
+                <span><Badge tone={m.movement === "in" ? "green" : m.movement === "out" ? "blue" : m.movement === "adjustment" ? "amber" : "red"}>{m.movement}</Badge> {m.movement === "adjustment" && m.quantity > 0 ? "+" : ""}{m.quantity} × {one<{ name: string }>(m.medicine)?.name}</span>
                 <span className="text-muted">{m.reference} · {fmtDateTime(m.created_at)}</span>
               </li>
             ))}

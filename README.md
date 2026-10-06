@@ -28,6 +28,7 @@ In the Supabase **SQL Editor**, run these files in order. Run each one once, as 
 3. `supabase/migrations/003_analytics.sql`: analytics and stock-alert functions
 4. `supabase/migrations/004_booking_requests.sql`: online appointment requests from the public booking page
 5. `supabase/migrations/005_phone_matching.sql`: patients can link their account however they type their phone number
+6. `supabase/migrations/006_stock_adjustments.sql`: correct batch quantities with a reason, and log expired write-offs
 
 ### 3. First administrator
 
@@ -77,6 +78,7 @@ Reception ─► Triage ─► Consultation ─┬─► Laboratory ─┐
 - Patient IDs are generated in the database as `<initials>-000001`. The initials are set in Settings.
 - Prices for consultations, tests, scans and drugs are taken from the catalogue in the database, so clients cannot change them.
 - Dispensing deducts stock first-expiry-first-out and logs every movement.
+- Receiving stock always adds to what is there. A wrong count is fixed with **Adjust** on the batch (Inventory), which records the change and a reason as an adjustment movement.
 - One invoice per visit combines all charges. Supported payment methods: cash, mobile money, bank transfer, insurance, debit card and credit card.
 
 ## Online booking

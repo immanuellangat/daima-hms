@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import { flashUrl } from "@/lib/utils";
+import { ADJUST_REASONS } from "@/lib/stock";
 
 const ROLES = ["pharmacist", "hospital_admin", "system_admin"] as const;
 
@@ -70,16 +71,29 @@ export async function writeOffExpired(batchId: string) {
   await requireRole([...ROLES]);
   const back = "/pharmacy/inventory";
   const supabase = await createClient();
-  const { data: b } = await supabase.from("medicine_batches").select("medicine_id, quantity, expiry_date, batch_no").eq("id", batchId).single();
-  if (!b) redirect(flashUrl(back, "error", "Batch not found."));
-  if (new Date(b.expiry_date) > new Date()) redirect(flashUrl(back, "error", "Only expired batches can be written off."));
-  if (b.quantity > 0) {
-    const { error } = await supabase.from("medicine_batches").update({ quantity: 0 }).eq("id", batchId);
-    if (error) redirect(flashUrl(back, "error", error.message));
-    await supabase.from("stock_movements").insert({
-      medicine_id: b.medicine_id, batch_id: batchId, movement: "expired", quantity: b.quantity, reference: `Write-off batch ${b.batch_no}`,
-    });
-  }
+  const { error } = await supabase.rpc("write_off_batch", { p_batch: batchId });
+  if (error) redirect(flashUrl(back, "error", error.message));
   revalidatePath(back);
   redirect(flashUrl(back, "ok", "Expired batch written off."));
+}
+
+/** Correct a batch quantity up or down. The reason is stored on the stock movement. */
+export async function adjustStock(batchId: string, formData: FormData) {
+  await requireRole([...ROLES]);
+  const back = "/pharmacy/inventory";
+  const qty = Number(formData.get("quantity"));
+  const reason = String(formData.get("reason") ?? "");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 200);
+  if (!Number.isInteger(qty) || qty < 0) redirect(flashUrl(back, "error", "Enter the correct quantity (0 or more)."));
+  if (!(ADJUST_REASONS as readonly string[]).includes(reason)) redirect(flashUrl(back, "error", "Choose a reason for the adjustment."));
+  if (reason === "Other" && note.length < 3) redirect(flashUrl(back, "error", "Describe the reason when choosing Other."));
+
+  const supabase = await createClient();
+  const { data: delta, error } = await supabase.rpc("adjust_stock", {
+    p_batch: batchId, p_new_qty: qty, p_reason: note ? `${reason}: ${note}` : reason,
+  });
+  if (error) redirect(flashUrl(back, "error", error.message));
+  revalidatePath(back);
+  const d = Number(delta);
+  redirect(flashUrl(back, "ok", `Stock adjusted (${d > 0 ? "+" : ""}${d}). Recorded in stock movements.`));
 }
