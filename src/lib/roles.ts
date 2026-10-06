@@ -54,6 +54,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: "layout" },
   { href: "/admin/analytics", label: "Analytics & Trends", icon: "chart" },
   { href: "/admin/stock", label: "Stock Management", icon: "boxes" },
+  { href: "/pharmacy/inventory", label: "Inventory & Batches", icon: "pill" },
   { href: "/admin/users", label: "Staff & Users", icon: "users" },
   { href: "/admin/audit", label: "Audit Trail", icon: "shield" },
   { href: "/admin/backups", label: "Backups", icon: "database" },

@@ -49,7 +49,12 @@ export default async function StockPage({ searchParams }: PageProps<"/admin/stoc
 
   return (
     <>
-      <PageHeader title="Stock management" subtitle="Red below 10% of maximum stock, green above 20%. Forecasts use the last 30/60/90 days of dispensing." action={<PrintButton label="Print restock list" />} />
+      <PageHeader title="Stock management" subtitle="Red below 10% of maximum stock, green above 20%. Forecasts use the last 30/60/90 days of dispensing." action={
+        <div className="no-print flex flex-wrap gap-2">
+          <ButtonLink href="/pharmacy/inventory" variant="secondary">Inventory &amp; batches</ButtonLink>
+          <PrintButton label="Print restock list" />
+        </div>
+      } />
       {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">{error.message}. Make sure 003_analytics.sql has been run.</p>}
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
